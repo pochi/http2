@@ -5,6 +5,12 @@ defmodule Http2.Mixfile do
     [app: :http2,
      version: "0.0.1",
      elixir: "~> 1.0",
+     description: "HTTP2 Client for Elixir",
+     package: [
+       contributors: ["pochi"],
+       licenses: ["MIT"],
+       links: %{"GitHub" => "https://github.com/pochi/http2"}
+     ],
      deps: deps]
   end
 
