@@ -15,7 +15,7 @@ defmodule HTTP2.Buffer do
   end
 
   def read(buffer, s) do
-    << head :: size(s)-binary, rest :: binary >> = buffer.data
+    << head :: size(s)-binary, _rest :: binary >> = buffer.data
     %Buffer{ data: head }
   end
 end
