@@ -1,5 +1,7 @@
 defmodule Http2.Connection do
 
+  alias Http2.Frame, as: Frame
+
   @remote_default_connection_settings %{
     settings_header_table_size: 4096,
     settings_enable_push: 1,
@@ -25,4 +27,41 @@ defmodule Http2.Connection do
 
   @connection_preface_magic "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
   def connection_preface_magic, do: @connection_preface_magic
+
+  @default_tcp_options [:binary, packet: :raw, active: true]
+  defp default_tcp_options, do: @default_tcp_options
+
+  def establish_connection(client, url) do
+    uri = URI.parse(url)
+    # :gen_tcp need char_list, not string
+    host = uri.host |> String.to_char_list
+    {:ok, sock} = :gen_tcp.connect(host, uri.port, default_tcp_options, :infinity)
+    sock |> :gen_tcp.send connection_preface_magic
+    sock |> exchange_setting_frame
+         |> connection_setting
+
+  end
+
+  defp exchange_setting_frame(sock) do
+    receive do
+      {:tcp, sock, response} ->
+        IO.puts "---------|||"
+        IO.inspect response
+        IO.puts "------------"
+        frame = Frame.parse response
+        sock |> :gen_tcp.send Frame.to_binary(frame)
+    end
+    sock
+  end
+
+  defp connection_setting(sock) do
+    receive do
+      {:tcp, sock, response} ->
+        IO.puts "----------"
+        IO.inspect response
+        IO.puts "------------"
+    end
+    sock
+  end
+
 end
