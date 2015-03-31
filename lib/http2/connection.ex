@@ -37,31 +37,47 @@ defmodule Http2.Connection do
     host = uri.host |> String.to_char_list
     {:ok, sock} = :gen_tcp.connect(host, uri.port, default_tcp_options, :infinity)
     sock |> :gen_tcp.send connection_preface_magic
-    sock |> exchange_setting_frame
-         |> connection_setting
-
+    pending_frame = sock |> exchange_setting_frame
+    local_settings = sock |> connection_setting(pending_frame)
   end
+
 
   defp exchange_setting_frame(sock) do
     receive do
       {:tcp, sock, response} ->
-        IO.puts "---------|||"
-        IO.inspect response
-        IO.puts "------------"
+        response |> debug
         frame = Frame.parse response
-        sock |> :gen_tcp.send Frame.to_binary(frame)
+        case frame |> Frame.type do
+          :settings ->
+            sock |> :gen_tcp.send Frame.to_binary(frame)
+          _ ->
+            IO.puts "Received frame is not setting"
+        end
     end
-    sock
+    frame
   end
 
-  defp connection_setting(sock) do
+  defp connection_setting(sock, pending_frame) do
     receive do
       {:tcp, sock, response} ->
-        IO.puts "----------"
-        IO.inspect response
-        IO.puts "------------"
+        response |> debug
+        frame = Frame.parse response
+        case frame |> Frame.type do
+          :settings ->
+            if frame |> Frame.ack? do
+              IO.inspect pending_frame
+              IO.puts "This is ack frame"
+            end
+          _ ->
+            IO.puts "Received frame is not setting"
+        end
     end
-    sock
+    pending_frame
   end
 
+  defp debug(something) do
+    IO.puts "----------"
+    IO.inspect something
+    IO.puts "========="
+  end
 end

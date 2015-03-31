@@ -19,9 +19,23 @@ defmodule Http2.Client do
         client = %{client | state: :connected}
     end
 
+    [client, stream] = client |> new_stream
+    IO.puts "kuroda"
+    IO.inspect client
+    IO.puts "pochi"
     {:ok, client}
   end
 
+  @spec new_stream(client :: Http2.Client) :: List
+  def new_stream(client) do
+    stream = "hoge"#client |> Stream.new
+    client = %{client | stream_id: client.stream_id + 2}
+    IO.puts client.stream_id
+    #client.stream_id = client.stream_id + 2
+    [client, stream]
+  end
+
+  @spec get(url :: String) :: tuple
   def get(url) do
     get(%Client{}, url)
   end
